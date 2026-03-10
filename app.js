@@ -22,23 +22,23 @@
   };
 
   // ── DOM refs ──
-  const $personForm    = document.getElementById('add-person-form');
-  const $personName    = document.getElementById('person-name');
-  const $peopleList    = document.getElementById('people-list');
-  const $peopleCount   = document.getElementById('people-count');
+  const $personForm = document.getElementById('add-person-form');
+  const $personName = document.getElementById('person-name');
+  const $peopleList = document.getElementById('people-list');
+  const $peopleCount = document.getElementById('people-count');
 
-  const $itemForm      = document.getElementById('add-item-form');
-  const $itemName      = document.getElementById('item-name');
-  const $itemPrice     = document.getElementById('item-price');
-  const $itemQty       = document.getElementById('item-qty');
+  const $itemForm = document.getElementById('add-item-form');
+  const $itemName = document.getElementById('item-name');
+  const $itemPrice = document.getElementById('item-price');
+  const $itemQty = document.getElementById('item-qty');
   const $itemsTableWrap = document.getElementById('items-table-wrap');
-  const $itemsCount    = document.getElementById('items-count');
-  const $grandTotal    = document.getElementById('grand-total');
+  const $itemsCount = document.getElementById('items-count');
+  const $grandTotal = document.getElementById('grand-total');
   const $grandTotalAmt = document.getElementById('grand-total-amount');
 
-  const $splitSummary  = document.getElementById('split-summary');
+  const $splitSummary = document.getElementById('split-summary');
 
-  const $themeToggle   = document.getElementById('theme-toggle');
+  const $themeToggle = document.getElementById('theme-toggle');
 
   // ── Helpers ──
   function getInitials(name) {
@@ -243,7 +243,7 @@
                 for="check-${item.id}-${person.id}"
                 class="consumer-check__label"
                 title="${escapeHTML(person.name)}"
-              >${escapeHTML(getInitials(person.name))}</label>
+              >${escapeHTML(person.name)}</label>
             </div>
           `;
         });
