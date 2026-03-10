@@ -651,6 +651,59 @@ h4 {
   height: 24px;
 }
 
+/* ── Inline Edit Inputs ── */
+.inline-edit {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: var(--radius-xs);
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.inline-edit:hover {
+  border-bottom-color: var(--border-primary);
+}
+
+.inline-edit:focus {
+  background: var(--bg-primary);
+  border-bottom-color: var(--brand);
+  box-shadow: 0 1px 0 0 var(--brand);
+}
+
+.inline-edit--text {
+  min-width: 80px;
+}
+
+.inline-edit--number {
+  width: 80px;
+  min-width: 60px;
+  text-align: left;
+}
+
+.inline-edit--qty {
+  width: 50px;
+  min-width: 40px;
+}
+
+/* Remove number input spinners */
+.inline-edit--number::-webkit-inner-spin-button,
+.inline-edit--number::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inline-edit--number {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ── Consumer Checkboxes ── */
 .consumer-checks {
   display: flex;

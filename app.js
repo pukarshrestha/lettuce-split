@@ -220,11 +220,40 @@
       html += `
         <tr data-item-row="${item.id}">
           <td>
-            ${escapeHTML(item.name)}
+            <input
+              type="text"
+              class="inline-edit inline-edit--text"
+              value="${escapeHTML(item.name)}"
+              data-edit-field="name"
+              data-edit-item="${item.id}"
+              aria-label="Edit item name"
+            />
             ${noConsumers ? `<span class="warning-badge" data-warning-item="${item.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Unassigned</span>` : ''}
           </td>
-          <td>${formatCurrency(item.unitPrice)}</td>
-          <td>${item.quantity}</td>
+          <td>
+            <input
+              type="number"
+              class="inline-edit inline-edit--number"
+              value="${item.unitPrice}"
+              step="0.01"
+              min="0.01"
+              data-edit-field="unitPrice"
+              data-edit-item="${item.id}"
+              aria-label="Edit unit price"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              class="inline-edit inline-edit--number inline-edit--qty"
+              value="${item.quantity}"
+              step="1"
+              min="1"
+              data-edit-field="quantity"
+              data-edit-item="${item.id}"
+              aria-label="Edit quantity"
+            />
+          </td>
           <td class="item-total">${formatCurrency(itemTotal)}</td>
       `;
 
@@ -383,12 +412,44 @@
   });
 
   $itemsTableWrap.addEventListener('change', function (e) {
+    // Consumer toggle
     const checkbox = e.target.closest('[data-consumer-toggle]');
     if (checkbox) {
       toggleConsumer(
         parseInt(checkbox.dataset.itemId, 10),
         parseInt(checkbox.dataset.personId, 10)
       );
+      return;
+    }
+
+    // Inline edit
+    const editInput = e.target.closest('[data-edit-field]');
+    if (editInput) {
+      const itemId = parseInt(editInput.dataset.editItem, 10);
+      const field = editInput.dataset.editField;
+      const item = state.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      if (field === 'name') {
+        const val = editInput.value.trim();
+        if (val) item.name = val;
+        else editInput.value = item.name; // revert if empty
+      } else if (field === 'unitPrice') {
+        const val = parseFloat(editInput.value);
+        if (val > 0) item.unitPrice = val;
+        else editInput.value = item.unitPrice; // revert
+      } else if (field === 'quantity') {
+        const val = parseInt(editInput.value, 10);
+        if (val >= 1) item.quantity = val;
+        else editInput.value = item.quantity; // revert
+      }
+
+      // Update computed cells without full re-render
+      const row = editInput.closest('tr');
+      const totalCell = row.querySelector('.item-total');
+      if (totalCell) totalCell.textContent = formatCurrency(item.unitPrice * item.quantity);
+      $grandTotalAmt.textContent = formatCurrency(getGrandTotal());
+      renderSplitSummary();
     }
   });
 
@@ -429,39 +490,60 @@
     }
   })();
 
-  // ── Export ──
-  function captureExportArea() {
-    // Create a temporary container with both bill items and split summary
-    const container = document.createElement('div');
-    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;padding:32px;background:' +
-      getComputedStyle(document.body).getPropertyValue('background') + ';';
-    container.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light');
+  // ── Export helpers ──
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    // Cleanup after a short delay
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
 
-    // Copy styles
-    const styles = document.querySelectorAll('link[rel="stylesheet"], style');
-    const styleClones = Array.from(styles).map(s => s.cloneNode(true));
-
+  function createExportClone() {
     const itemsSection = document.getElementById('items-section');
     const splitSection = $splitSummary.closest('section.card');
 
-    if (itemsSection) container.appendChild(itemsSection.cloneNode(true));
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:24px;background:' +
+      getComputedStyle(document.body).backgroundColor + ';color:' +
+      getComputedStyle(document.body).color + ';';
+
+    const itemsClone = itemsSection.cloneNode(true);
+    const splitClone = splitSection.cloneNode(true);
+
+    // Remove interactive elements from clone
+    itemsClone.querySelectorAll('[data-remove-item]').forEach(btn => btn.closest('td').remove());
+    itemsClone.querySelectorAll('.bill-form-row').forEach(el => el.remove());
+    // Replace inline edit inputs with static text
+    itemsClone.querySelectorAll('.inline-edit').forEach(inp => {
+      const span = document.createElement('span');
+      if (inp.dataset.editField === 'unitPrice') {
+        span.textContent = formatCurrency(parseFloat(inp.value));
+      } else {
+        span.textContent = inp.value;
+      }
+      inp.replaceWith(span);
+    });
+
+    wrapper.appendChild(itemsClone);
     const spacer = document.createElement('div');
     spacer.style.height = '24px';
-    container.appendChild(spacer);
-    if (splitSection) container.appendChild(splitSection.cloneNode(true));
+    wrapper.appendChild(spacer);
+    wrapper.appendChild(splitClone);
 
-    // Remove delete buttons from the clone
-    container.querySelectorAll('[data-remove-item]').forEach(btn => btn.remove());
-    // Remove checkbox inputs from clone (keep labels)
-    container.querySelectorAll('.consumer-check input').forEach(inp => inp.remove());
-
-    document.body.appendChild(container);
-    // Inject styles into the temporary container
-    const shadowHost = container;
-    styleClones.forEach(s => shadowHost.prepend(s));
-
-    return { container, cleanup: () => container.remove() };
+    document.body.appendChild(wrapper);
+    return { wrapper, cleanup: () => wrapper.remove() };
   }
+
+  const PDF_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
+  const JPEG_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 
   $exportPdf.addEventListener('click', async function () {
     if (state.items.length === 0) return;
@@ -469,49 +551,68 @@
     $exportPdf.textContent = 'Exporting…';
 
     try {
-      const itemsSection = document.getElementById('items-section');
-      const splitSection = $splitSummary.closest('section.card');
+      const { wrapper, cleanup } = createExportClone();
 
-      // Capture items section
-      const itemsCanvas = await html2canvas(itemsSection, {
-        scale: 2, useCORS: true,
+      const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
         backgroundColor: getComputedStyle(document.body).backgroundColor,
       });
+      cleanup();
 
-      // Capture split section
-      const splitCanvas = await html2canvas(splitSection, {
-        scale: 2, useCORS: true,
-        backgroundColor: getComputedStyle(document.body).backgroundColor,
-      });
+      const imgData = canvas.toDataURL('image/png');
 
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Robust jsPDF detection — the UMD bundle registers differently depending on version
+      let JsPDFConstructor;
+      if (window.jspdf && window.jspdf.jsPDF) {
+        JsPDFConstructor = window.jspdf.jsPDF;
+      } else if (window.jsPDF) {
+        JsPDFConstructor = window.jsPDF;
+      } else {
+        throw new Error('jsPDF library not loaded. Please check your internet connection and refresh.');
+      }
+
+      const pdf = new JsPDFConstructor('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
       const contentWidth = pageWidth - margin * 2;
+      const imgRatio = canvas.height / canvas.width;
+      const imgHeight = contentWidth * imgRatio;
 
-      // Add items image
-      const itemsRatio = itemsCanvas.height / itemsCanvas.width;
-      const itemsHeight = contentWidth * itemsRatio;
-      pdf.addImage(itemsCanvas.toDataURL('image/png'), 'PNG', margin, margin, contentWidth, itemsHeight);
-
-      // Add split image
-      const splitRatio = splitCanvas.height / splitCanvas.width;
-      const splitHeight = contentWidth * splitRatio;
-      let yPos = margin + itemsHeight + 5;
-
-      if (yPos + splitHeight > pdf.internal.pageSize.getHeight() - margin) {
-        pdf.addPage();
-        yPos = margin;
+      if (imgHeight <= pageHeight - margin * 2) {
+        // Fits on one page
+        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, imgHeight);
+      } else {
+        // Multi-page: slice the canvas
+        const pageContentHeight = pageHeight - margin * 2;
+        const scaledPageHeight = (pageContentHeight / contentWidth) * canvas.width;
+        let srcY = 0;
+        let page = 0;
+        while (srcY < canvas.height) {
+          if (page > 0) pdf.addPage();
+          const sliceHeight = Math.min(scaledPageHeight, canvas.height - srcY);
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = sliceHeight;
+          const ctx = sliceCanvas.getContext('2d');
+          ctx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+          const sliceData = sliceCanvas.toDataURL('image/png');
+          const sliceDisplayHeight = (sliceHeight / canvas.width) * contentWidth;
+          pdf.addImage(sliceData, 'PNG', margin, margin, contentWidth, sliceDisplayHeight);
+          srcY += sliceHeight;
+          page++;
+        }
       }
-      pdf.addImage(splitCanvas.toDataURL('image/png'), 'PNG', margin, yPos, contentWidth, splitHeight);
 
-      pdf.save('bill-split.pdf');
+      const pdfBlob = pdf.output('blob');
+      triggerDownload(pdfBlob, 'bill-split.pdf');
     } catch (err) {
       console.error('PDF export failed:', err);
+      alert('PDF export failed. Please try again.');
     } finally {
       $exportPdf.disabled = false;
-      $exportPdf.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Export as PDF';
+      $exportPdf.innerHTML = PDF_ICON + ' Export as PDF';
     }
   });
 
@@ -521,44 +622,27 @@
     $exportJpeg.textContent = 'Exporting…';
 
     try {
-      const itemsSection = document.getElementById('items-section');
-      const splitSection = $splitSummary.closest('section.card');
-
-      // Create a wrapper to capture both sections together
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:24px;background:' +
-        getComputedStyle(document.body).backgroundColor + ';';
-
-      const itemsClone = itemsSection.cloneNode(true);
-      const splitClone = splitSection.cloneNode(true);
-
-      // Remove delete buttons from clone
-      itemsClone.querySelectorAll('[data-remove-item]').forEach(btn => btn.closest('td').remove());
-
-      wrapper.appendChild(itemsClone);
-      const spacer = document.createElement('div');
-      spacer.style.height = '24px';
-      wrapper.appendChild(spacer);
-      wrapper.appendChild(splitClone);
-
-      document.body.appendChild(wrapper);
+      const { wrapper, cleanup } = createExportClone();
 
       const canvas = await html2canvas(wrapper, {
-        scale: 2, useCORS: true,
+        scale: 2,
+        useCORS: true,
         backgroundColor: getComputedStyle(document.body).backgroundColor,
       });
+      cleanup();
 
-      wrapper.remove();
-
-      const link = document.createElement('a');
-      link.download = 'bill-split.jpg';
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
-      link.click();
+      // Use toBlob for reliable download with correct extension
+      canvas.toBlob(function (blob) {
+        if (blob) {
+          triggerDownload(blob, 'bill-split.jpg');
+        }
+      }, 'image/jpeg', 0.95);
     } catch (err) {
       console.error('JPEG export failed:', err);
+      alert('JPEG export failed. Please try again.');
     } finally {
       $exportJpeg.disabled = false;
-      $exportJpeg.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Export as JPEG';
+      $exportJpeg.innerHTML = JPEG_ICON + ' Export as JPEG';
     }
   });
 
