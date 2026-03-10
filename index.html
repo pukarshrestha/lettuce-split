@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Split bills fairly among friends. Add items, assign consumers, and see each person's share instantly." />
+  <meta name="description"
+    content="Split bills fairly among friends. Add items, assign consumers, and see each person's share instantly." />
   <title>SplitWise — Fair Bill Splitting</title>
   <link rel="stylesheet" href="index.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💚</text></svg>" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💚</text></svg>" />
 </head>
+
 <body>
   <div class="app-wrapper">
 
@@ -16,17 +20,35 @@
       <h1 class="app-header__title">
         Split<span class="app-header__title-accent">Wise</span>
       </h1>
-      <p class="app-header__subtitle">Add people, toss in the items, and let us crunch who owes what.</p>
       <div class="app-header__actions">
-        <button
-          type="button"
-          class="theme-toggle"
-          id="theme-toggle"
-          aria-label="Toggle dark mode"
-          title="Toggle dark mode"
-        >
-          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <div class="currency-select-wrap">
+          <label for="currency-select" class="sr-only">Currency</label>
+          <select id="currency-select" class="currency-select" aria-label="Select currency">
+            <option value="Rs." selected>Rs. (NPR)</option>
+            <option value="$">$ (USD)</option>
+            <option value="£">£ (GBP)</option>
+            <option value="₹">₹ (INR)</option>
+            <option value="৳">৳ (BDT)</option>
+          </select>
+        </div>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode"
+          title="Toggle dark mode">
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
         </button>
       </div>
     </header>
@@ -35,11 +57,17 @@
     <div class="main-grid">
 
       <!-- ── People Card ── -->
-      <section class="card" aria-labelledby="people-heading">
+      <section class="card full-width" aria-labelledby="people-heading">
         <div class="card__header">
           <div class="card__title-group">
             <div class="card__icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
             </div>
             <h2 class="card__title" id="people-heading">People</h2>
           </div>
@@ -48,75 +76,19 @@
         <form class="form-row" id="add-person-form" autocomplete="off">
           <div class="form-group">
             <label for="person-name" class="form-label">Name</label>
-            <input
-              type="text"
-              id="person-name"
-              class="form-input"
-              placeholder="e.g. Sarah"
-              maxlength="30"
-              required
-            />
+            <input type="text" id="person-name" class="form-input" placeholder="e.g. Sarah" maxlength="30" required />
           </div>
           <button type="submit" class="btn btn--primary" aria-label="Add person">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
             Add
           </button>
         </form>
-        <div class="people-list" id="people-list" role="list" aria-label="Added people" style="margin-top: var(--spacing-lg);"></div>
-      </section>
-
-      <!-- ── Add Item Card ── -->
-      <section class="card" aria-labelledby="items-heading">
-        <div class="card__header">
-          <div class="card__title-group">
-            <div class="card__icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            </div>
-            <h2 class="card__title" id="items-heading">Add Item</h2>
-          </div>
-        </div>
-        <form class="form-row" id="add-item-form" autocomplete="off">
-          <div class="form-group">
-            <label for="item-name" class="form-label">Item name</label>
-            <input
-              type="text"
-              id="item-name"
-              class="form-input"
-              placeholder="e.g. Margherita Pizza"
-              maxlength="60"
-              required
-            />
-          </div>
-          <div class="form-group form-group--small">
-            <label for="item-price" class="form-label">Unit price</label>
-            <input
-              type="number"
-              id="item-price"
-              class="form-input"
-              placeholder="0.00"
-              min="0.01"
-              step="0.01"
-              required
-            />
-          </div>
-          <div class="form-group form-group--small">
-            <label for="item-qty" class="form-label">Qty</label>
-            <input
-              type="number"
-              id="item-qty"
-              class="form-input"
-              placeholder="1"
-              min="1"
-              step="1"
-              value="1"
-              required
-            />
-          </div>
-          <button type="submit" class="btn btn--primary" aria-label="Add item">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add
-          </button>
-        </form>
+        <div class="people-list" id="people-list" role="list" aria-label="Added people"
+          style="margin-top: var(--spacing-lg);"></div>
       </section>
 
       <!-- ── Items Table (Full Width) ── -->
@@ -124,12 +96,40 @@
         <div class="card__header">
           <div class="card__title-group">
             <div class="card__icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                <line x1="1" y1="10" x2="23" y2="10" />
+              </svg>
             </div>
             <h2 class="card__title" id="bill-heading">Bill Items</h2>
           </div>
           <span class="card__badge" id="items-count">0 items</span>
         </div>
+        <form class="form-row bill-form-row" id="add-item-form" autocomplete="off">
+          <div class="form-group">
+            <label for="item-name" class="form-label">Item name</label>
+            <input type="text" id="item-name" class="form-input" placeholder="e.g. Margherita Pizza" maxlength="60"
+              required />
+          </div>
+          <div class="form-group form-group--small">
+            <label for="item-price" class="form-label">Unit price</label>
+            <input type="number" id="item-price" class="form-input" placeholder="0.00" min="0.01" step="0.01"
+              required />
+          </div>
+          <div class="form-group form-group--small">
+            <label for="item-qty" class="form-label">Qty</label>
+            <input type="number" id="item-qty" class="form-input" placeholder="1" min="1" step="1" value="1" required />
+          </div>
+          <button type="submit" class="btn btn--primary" aria-label="Add item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add
+          </button>
+        </form>
         <div id="items-table-wrap">
           <!-- rendered by JS -->
         </div>
@@ -144,7 +144,11 @@
         <div class="card__header">
           <div class="card__title-group">
             <div class="card__icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
             </div>
             <h2 class="card__title" id="split-heading">Split Summary</h2>
           </div>
@@ -155,8 +159,39 @@
       </section>
 
     </div><!-- /main-grid -->
+
+    <!-- ═══ Export Section ═══ -->
+    <section class="export-section" aria-labelledby="export-heading">
+      <h3 class="export-section__title" id="export-heading">Export</h3>
+      <div class="export-section__actions">
+        <button type="button" class="btn btn--secondary" id="export-pdf" aria-label="Export as PDF">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          Export as PDF
+        </button>
+        <button type="button" class="btn btn--secondary" id="export-jpeg" aria-label="Export as JPEG">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          Export as JPEG
+        </button>
+      </div>
+    </section>
+
   </div><!-- /app-wrapper -->
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>

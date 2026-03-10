@@ -19,6 +19,7 @@
     items: [],    // { id, name, unitPrice, quantity, consumers: [personId…] }
     nextPeopleId: 1,
     nextItemId: 1,
+    currency: 'Rs.',
   };
 
   // ── DOM refs ──
@@ -39,6 +40,9 @@
   const $splitSummary = document.getElementById('split-summary');
 
   const $themeToggle = document.getElementById('theme-toggle');
+  const $currencySelect = document.getElementById('currency-select');
+  const $exportPdf = document.getElementById('export-pdf');
+  const $exportJpeg = document.getElementById('export-jpeg');
 
   // ── Helpers ──
   function getInitials(name) {
@@ -52,7 +56,7 @@
   }
 
   function formatCurrency(amount) {
-    return '$' + amount.toFixed(2);
+    return state.currency + ' ' + amount.toFixed(2);
   }
 
   function escapeHTML(str) {
@@ -408,6 +412,155 @@
       setTheme('dark');
     }
   })();
+
+  // ── Currency ──
+  $currencySelect.addEventListener('change', function () {
+    state.currency = $currencySelect.value;
+    localStorage.setItem('bill-splitter-currency', state.currency);
+    render();
+  });
+
+  // Restore currency from localStorage
+  (function initCurrency() {
+    const saved = localStorage.getItem('bill-splitter-currency');
+    if (saved) {
+      state.currency = saved;
+      $currencySelect.value = saved;
+    }
+  })();
+
+  // ── Export ──
+  function captureExportArea() {
+    // Create a temporary container with both bill items and split summary
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;padding:32px;background:' +
+      getComputedStyle(document.body).getPropertyValue('background') + ';';
+    container.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light');
+
+    // Copy styles
+    const styles = document.querySelectorAll('link[rel="stylesheet"], style');
+    const styleClones = Array.from(styles).map(s => s.cloneNode(true));
+
+    const itemsSection = document.getElementById('items-section');
+    const splitSection = $splitSummary.closest('section.card');
+
+    if (itemsSection) container.appendChild(itemsSection.cloneNode(true));
+    const spacer = document.createElement('div');
+    spacer.style.height = '24px';
+    container.appendChild(spacer);
+    if (splitSection) container.appendChild(splitSection.cloneNode(true));
+
+    // Remove delete buttons from the clone
+    container.querySelectorAll('[data-remove-item]').forEach(btn => btn.remove());
+    // Remove checkbox inputs from clone (keep labels)
+    container.querySelectorAll('.consumer-check input').forEach(inp => inp.remove());
+
+    document.body.appendChild(container);
+    // Inject styles into the temporary container
+    const shadowHost = container;
+    styleClones.forEach(s => shadowHost.prepend(s));
+
+    return { container, cleanup: () => container.remove() };
+  }
+
+  $exportPdf.addEventListener('click', async function () {
+    if (state.items.length === 0) return;
+    $exportPdf.disabled = true;
+    $exportPdf.textContent = 'Exporting…';
+
+    try {
+      const itemsSection = document.getElementById('items-section');
+      const splitSection = $splitSummary.closest('section.card');
+
+      // Capture items section
+      const itemsCanvas = await html2canvas(itemsSection, {
+        scale: 2, useCORS: true,
+        backgroundColor: getComputedStyle(document.body).backgroundColor,
+      });
+
+      // Capture split section
+      const splitCanvas = await html2canvas(splitSection, {
+        scale: 2, useCORS: true,
+        backgroundColor: getComputedStyle(document.body).backgroundColor,
+      });
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 10;
+      const contentWidth = pageWidth - margin * 2;
+
+      // Add items image
+      const itemsRatio = itemsCanvas.height / itemsCanvas.width;
+      const itemsHeight = contentWidth * itemsRatio;
+      pdf.addImage(itemsCanvas.toDataURL('image/png'), 'PNG', margin, margin, contentWidth, itemsHeight);
+
+      // Add split image
+      const splitRatio = splitCanvas.height / splitCanvas.width;
+      const splitHeight = contentWidth * splitRatio;
+      let yPos = margin + itemsHeight + 5;
+
+      if (yPos + splitHeight > pdf.internal.pageSize.getHeight() - margin) {
+        pdf.addPage();
+        yPos = margin;
+      }
+      pdf.addImage(splitCanvas.toDataURL('image/png'), 'PNG', margin, yPos, contentWidth, splitHeight);
+
+      pdf.save('bill-split.pdf');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    } finally {
+      $exportPdf.disabled = false;
+      $exportPdf.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Export as PDF';
+    }
+  });
+
+  $exportJpeg.addEventListener('click', async function () {
+    if (state.items.length === 0) return;
+    $exportJpeg.disabled = true;
+    $exportJpeg.textContent = 'Exporting…';
+
+    try {
+      const itemsSection = document.getElementById('items-section');
+      const splitSection = $splitSummary.closest('section.card');
+
+      // Create a wrapper to capture both sections together
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:24px;background:' +
+        getComputedStyle(document.body).backgroundColor + ';';
+
+      const itemsClone = itemsSection.cloneNode(true);
+      const splitClone = splitSection.cloneNode(true);
+
+      // Remove delete buttons from clone
+      itemsClone.querySelectorAll('[data-remove-item]').forEach(btn => btn.closest('td').remove());
+
+      wrapper.appendChild(itemsClone);
+      const spacer = document.createElement('div');
+      spacer.style.height = '24px';
+      wrapper.appendChild(spacer);
+      wrapper.appendChild(splitClone);
+
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
+        scale: 2, useCORS: true,
+        backgroundColor: getComputedStyle(document.body).backgroundColor,
+      });
+
+      wrapper.remove();
+
+      const link = document.createElement('a');
+      link.download = 'bill-split.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+    } catch (err) {
+      console.error('JPEG export failed:', err);
+    } finally {
+      $exportJpeg.disabled = false;
+      $exportJpeg.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Export as JPEG';
+    }
+  });
 
   // ── Initial Render ──
   render();
