@@ -613,7 +613,7 @@
       // ── Header ──
       pdf.setFontSize(20);
       pdf.setFont(undefined, 'bold');
-      pdf.text('SplitHappens', margin, 20);
+      pdf.text('LettuceSplit', margin, 20);
       pdf.setFontSize(10);
       pdf.setFont(undefined, 'normal');
       pdf.setTextColor(120);
@@ -731,7 +731,7 @@
       });
 
       const pdfBlob = pdf.output('blob');
-      triggerDownload(pdfBlob, 'split-happens.pdf');
+      triggerDownload(pdfBlob, 'lettuce-split.pdf');
     } catch (err) {
       console.error('PDF export failed:', err);
       alert('PDF export failed. Please try again.');
