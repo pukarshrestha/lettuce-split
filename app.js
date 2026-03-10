@@ -20,6 +20,7 @@
     nextPeopleId: 1,
     nextItemId: 1,
     currency: 'Rs.',
+    splitView: 'cards', // 'cards' or 'table'
   };
 
   // ── DOM refs ──
@@ -42,7 +43,7 @@
   const $themeToggle = document.getElementById('theme-toggle');
   const $currencySelect = document.getElementById('currency-select');
   const $exportPdf = document.getElementById('export-pdf');
-  const $exportJpeg = document.getElementById('export-jpeg');
+  const $viewToggle = document.getElementById('view-toggle');
 
   // ── Helpers ──
   function getInitials(name) {
@@ -332,7 +333,7 @@
       $splitSummary.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V14M18 10V14M2 8.2L2 15.8C2 16.9201 2 17.4802 2.21799 17.908C2.40973 18.2843 2.71569 18.5903 3.09202 18.782C3.51984 19 4.07989 19 5.2 19L18.8 19C19.9201 19 20.4802 19 20.908 18.782C21.2843 18.5903 21.5903 18.2843 21.782 17.908C22 17.4802 22 16.9201 22 15.8V8.2C22 7.0799 22 6.51984 21.782 6.09202C21.5903 5.7157 21.2843 5.40974 20.908 5.21799C20.4802 5 19.9201 5 18.8 5L5.2 5C4.0799 5 3.51984 5 3.09202 5.21799C2.7157 5.40973 2.40973 5.71569 2.21799 6.09202C2 6.51984 2 7.07989 2 8.2ZM14.5 12C14.5 13.3807 13.3807 14.5 12 14.5C10.6193 14.5 9.5 13.3807 9.5 12C9.5 10.6193 10.6193 9.5 12 9.5C13.3807 9.5 14.5 10.6193 14.5 12Z"/></svg>
           </div>
           <p class="empty-state__title">No splits to show yet</p>
           <p class="empty-state__text">Add people and items to see the breakdown.</p>
@@ -342,6 +343,15 @@
     }
 
     const splits = calculateSplits();
+
+    if (state.splitView === 'table') {
+      renderSplitTable(splits);
+    } else {
+      renderSplitCards(splits);
+    }
+  }
+
+  function renderSplitCards(splits) {
     let html = '<div class="splits-grid">';
 
     state.people.forEach(person => {
@@ -377,6 +387,55 @@
     });
 
     html += '</div>';
+    $splitSummary.innerHTML = html;
+  }
+
+  function renderSplitTable(splits) {
+    let grandTotal = 0;
+    let html = `
+      <table class="split-table" role="table">
+        <thead>
+          <tr>
+            <th scope="col">Person</th>
+            <th scope="col">Items</th>
+            <th scope="col"># Items</th>
+            <th scope="col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    state.people.forEach(person => {
+      const data = splits[person.id];
+      grandTotal += data.total;
+      const itemNames = data.details.map(d => d.name).join(', ') || '—';
+
+      html += `
+        <tr>
+          <td>
+            <div class="split-table__person-cell">
+              <div class="split-table__avatar" style="background: ${avatarColor(person.id)}">${escapeHTML(getInitials(person.name))}</div>
+              <span class="split-table__name">${escapeHTML(person.name)}</span>
+            </div>
+          </td>
+          <td class="split-table__items-list">${escapeHTML(itemNames)}</td>
+          <td>${data.details.length}</td>
+          <td class="split-table__amount">${formatCurrency(data.total)}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Total</td>
+            <td class="split-table__amount">${formatCurrency(grandTotal)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
     $splitSummary.innerHTML = html;
   }
 
@@ -490,6 +549,30 @@
     }
   })();
 
+  // ── View Toggle ──
+  $viewToggle.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-view]');
+    if (!btn || btn.classList.contains('view-toggle__btn--active')) return;
+
+    $viewToggle.querySelectorAll('.view-toggle__btn').forEach(b => b.classList.remove('view-toggle__btn--active'));
+    btn.classList.add('view-toggle__btn--active');
+
+    state.splitView = btn.dataset.view;
+    localStorage.setItem('bill-splitter-split-view', state.splitView);
+    renderSplitSummary();
+  });
+
+  // Restore split view from localStorage
+  (function initSplitView() {
+    const saved = localStorage.getItem('bill-splitter-split-view');
+    if (saved && (saved === 'cards' || saved === 'table')) {
+      state.splitView = saved;
+      $viewToggle.querySelectorAll('.view-toggle__btn').forEach(b => {
+        b.classList.toggle('view-toggle__btn--active', b.dataset.view === saved);
+      });
+    }
+  })();
+
   // ── Export helpers ──
   function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
@@ -499,150 +582,162 @@
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    // Cleanup after a short delay
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, 100);
   }
 
-  function createExportClone() {
-    const itemsSection = document.getElementById('items-section');
-    const splitSection = $splitSummary.closest('section.card');
-
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:1100px;padding:24px;background:' +
-      getComputedStyle(document.body).backgroundColor + ';color:' +
-      getComputedStyle(document.body).color + ';';
-
-    const itemsClone = itemsSection.cloneNode(true);
-    const splitClone = splitSection.cloneNode(true);
-
-    // Remove interactive elements from clone
-    itemsClone.querySelectorAll('[data-remove-item]').forEach(btn => btn.closest('td').remove());
-    itemsClone.querySelectorAll('.bill-form-row').forEach(el => el.remove());
-    // Replace inline edit inputs with static text
-    itemsClone.querySelectorAll('.inline-edit').forEach(inp => {
-      const span = document.createElement('span');
-      if (inp.dataset.editField === 'unitPrice') {
-        span.textContent = formatCurrency(parseFloat(inp.value));
-      } else {
-        span.textContent = inp.value;
-      }
-      inp.replaceWith(span);
-    });
-
-    wrapper.appendChild(itemsClone);
-    const spacer = document.createElement('div');
-    spacer.style.height = '24px';
-    wrapper.appendChild(spacer);
-    wrapper.appendChild(splitClone);
-
-    document.body.appendChild(wrapper);
-    return { wrapper, cleanup: () => wrapper.remove() };
-  }
-
   const PDF_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
-  const JPEG_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 
-  $exportPdf.addEventListener('click', async function () {
+  $exportPdf.addEventListener('click', function () {
     if (state.items.length === 0) return;
     $exportPdf.disabled = true;
     $exportPdf.textContent = 'Exporting…';
 
     try {
-      const { wrapper, cleanup } = createExportClone();
-
-      const canvas = await html2canvas(wrapper, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: getComputedStyle(document.body).backgroundColor,
-      });
-      cleanup();
-
-      const imgData = canvas.toDataURL('image/png');
-
-      // Robust jsPDF detection — the UMD bundle registers differently depending on version
+      // Robust jsPDF detection
       let JsPDFConstructor;
       if (window.jspdf && window.jspdf.jsPDF) {
         JsPDFConstructor = window.jspdf.jsPDF;
       } else if (window.jsPDF) {
         JsPDFConstructor = window.jsPDF;
       } else {
-        throw new Error('jsPDF library not loaded. Please check your internet connection and refresh.');
+        throw new Error('jsPDF library not loaded. Please refresh the page.');
       }
 
       const pdf = new JsPDFConstructor('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const contentWidth = pageWidth - margin * 2;
-      const imgRatio = canvas.height / canvas.width;
-      const imgHeight = contentWidth * imgRatio;
+      const margin = 14;
 
-      if (imgHeight <= pageHeight - margin * 2) {
-        // Fits on one page
-        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, imgHeight);
-      } else {
-        // Multi-page: slice the canvas
-        const pageContentHeight = pageHeight - margin * 2;
-        const scaledPageHeight = (pageContentHeight / contentWidth) * canvas.width;
-        let srcY = 0;
-        let page = 0;
-        while (srcY < canvas.height) {
-          if (page > 0) pdf.addPage();
-          const sliceHeight = Math.min(scaledPageHeight, canvas.height - srcY);
-          const sliceCanvas = document.createElement('canvas');
-          sliceCanvas.width = canvas.width;
-          sliceCanvas.height = sliceHeight;
-          const ctx = sliceCanvas.getContext('2d');
-          ctx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-          const sliceData = sliceCanvas.toDataURL('image/png');
-          const sliceDisplayHeight = (sliceHeight / canvas.width) * contentWidth;
-          pdf.addImage(sliceData, 'PNG', margin, margin, contentWidth, sliceDisplayHeight);
-          srcY += sliceHeight;
-          page++;
-        }
-      }
+      // ── Header ──
+      pdf.setFontSize(20);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('SplitHappens', margin, 20);
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(120);
+      const dateStr = new Date().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      });
+      pdf.text(dateStr, pageWidth - margin, 20, { align: 'right' });
+      pdf.setTextColor(0);
+
+      // ── Bill Items Table ──
+      pdf.setFontSize(13);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Bill Items', margin, 32);
+
+      const peopleMap = {};
+      state.people.forEach(p => { peopleMap[p.id] = p.name; });
+
+      const itemRows = state.items.map(item => {
+        const total = item.unitPrice * item.quantity;
+        const sharedBy = item.consumers
+          .map(id => peopleMap[id] || '?')
+          .join(', ') || '—';
+        return [
+          item.name,
+          formatCurrency(item.unitPrice),
+          String(item.quantity),
+          formatCurrency(total),
+          sharedBy,
+        ];
+      });
+
+      const grandTotal = state.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      itemRows.push(['', '', '', formatCurrency(grandTotal), '']);
+
+      pdf.autoTable({
+        startY: 36,
+        head: [['Item', 'Price', 'Qty', 'Total', 'Shared By']],
+        body: itemRows,
+        margin: { left: margin, right: margin },
+        theme: 'grid',
+        headStyles: {
+          fillColor: [80, 80, 80],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 9,
+        },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { halign: 'right', cellWidth: 28 },
+          2: { halign: 'center', cellWidth: 16 },
+          3: { halign: 'right', cellWidth: 28 },
+          4: { cellWidth: 'auto' },
+        },
+        // Bold total row
+        didParseCell: function (data) {
+          if (data.section === 'body' && data.row.index === itemRows.length - 1) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = [240, 240, 240];
+          }
+        },
+      });
+
+      // ── Split Summary Table ──
+      const splitY = pdf.lastAutoTable.finalY + 12;
+      pdf.setFontSize(13);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Split Summary', margin, splitY);
+
+      const splits = calculateSplits();
+      let splitGrandTotal = 0;
+      const splitRows = state.people.map(person => {
+        const data = splits[person.id];
+        splitGrandTotal += data.total;
+        const itemNames = data.details.map(d => d.name).join(', ') || '—';
+        return [
+          person.name,
+          itemNames,
+          String(data.details.length),
+          formatCurrency(data.total),
+        ];
+      });
+
+      splitRows.push(['Total', '', '', formatCurrency(splitGrandTotal)]);
+
+      pdf.autoTable({
+        startY: splitY + 4,
+        head: [['Person', 'Items', '# Items', 'Amount']],
+        body: splitRows,
+        margin: { left: margin, right: margin },
+        theme: 'grid',
+        headStyles: {
+          fillColor: [80, 80, 80],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 9,
+        },
+        columnStyles: {
+          0: { cellWidth: 36 },
+          1: { cellWidth: 'auto' },
+          2: { halign: 'center', cellWidth: 20 },
+          3: { halign: 'right', cellWidth: 30 },
+        },
+        didParseCell: function (data) {
+          if (data.section === 'body' && data.row.index === splitRows.length - 1) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = [240, 240, 240];
+          }
+        },
+      });
 
       const pdfBlob = pdf.output('blob');
-      triggerDownload(pdfBlob, 'bill-split.pdf');
+      triggerDownload(pdfBlob, 'split-happens.pdf');
     } catch (err) {
       console.error('PDF export failed:', err);
       alert('PDF export failed. Please try again.');
     } finally {
       $exportPdf.disabled = false;
       $exportPdf.innerHTML = PDF_ICON + ' Export as PDF';
-    }
-  });
-
-  $exportJpeg.addEventListener('click', async function () {
-    if (state.items.length === 0) return;
-    $exportJpeg.disabled = true;
-    $exportJpeg.textContent = 'Exporting…';
-
-    try {
-      const { wrapper, cleanup } = createExportClone();
-
-      const canvas = await html2canvas(wrapper, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: getComputedStyle(document.body).backgroundColor,
-      });
-      cleanup();
-
-      // Use toBlob for reliable download with correct extension
-      canvas.toBlob(function (blob) {
-        if (blob) {
-          triggerDownload(blob, 'bill-split.jpg');
-        }
-      }, 'image/jpeg', 0.95);
-    } catch (err) {
-      console.error('JPEG export failed:', err);
-      alert('JPEG export failed. Please try again.');
-    } finally {
-      $exportJpeg.disabled = false;
-      $exportJpeg.innerHTML = JPEG_ICON + ' Export as JPEG';
     }
   });
 
