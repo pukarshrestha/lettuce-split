@@ -44,6 +44,7 @@
   const $currencySelect = document.getElementById('currency-select');
   const $exportPdf = document.getElementById('export-pdf');
   const $viewToggle = document.getElementById('view-toggle');
+  const $copySummary = document.getElementById('copy-summary');
 
   // ── Helpers ──
   function getInitials(name) {
@@ -572,6 +573,55 @@
       });
     }
   })();
+
+  // ── Copy to Clipboard ──
+  function buildSummaryText() {
+    if (state.people.length === 0 || state.items.length === 0) return '';
+
+    const splits = calculateSplits();
+    const lines = [];
+    let grandTotal = 0;
+
+    lines.push('Split Summary');
+    lines.push('─'.repeat(30));
+
+    state.people.forEach(person => {
+      const data = splits[person.id];
+      grandTotal += data.total;
+      lines.push('');
+      lines.push(`${person.name} — ${formatCurrency(data.total)}`);
+      if (data.details.length > 0) {
+        data.details.forEach(d => {
+          lines.push(`  • ${d.name}: ${formatCurrency(d.amount)}`);
+        });
+      } else {
+        lines.push('  • No items assigned');
+      }
+    });
+
+    lines.push('');
+    lines.push('─'.repeat(30));
+    lines.push(`Total: ${formatCurrency(grandTotal)}`);
+
+    return lines.join('\n');
+  }
+
+  $copySummary.addEventListener('click', async function () {
+    const text = buildSummaryText();
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      $copySummary.classList.add('btn-copy-summary--copied');
+      $copySummary.setAttribute('title', 'Copied!');
+      setTimeout(() => {
+        $copySummary.classList.remove('btn-copy-summary--copied');
+        $copySummary.setAttribute('title', 'Copy to clipboard');
+      }, 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  });
 
   // ── Export helpers ──
   function triggerDownload(blob, filename) {

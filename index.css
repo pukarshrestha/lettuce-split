@@ -845,6 +845,60 @@ h4 {
   border-top: 1px solid var(--border-secondary);
 }
 
+/* ── Copy Summary Button ── */
+.btn-copy-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  margin-left: auto;
+  margin-right: var(--spacing-sm);
+}
+
+.btn-copy-summary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-copy-summary .icon-check {
+  display: none;
+}
+
+.btn-copy-summary:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.btn-copy-summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--brand-subtle);
+}
+
+.btn-copy-summary--copied {
+  color: var(--success);
+}
+
+.btn-copy-summary--copied .icon-clipboard {
+  display: none;
+}
+
+.btn-copy-summary--copied .icon-check {
+  display: block;
+}
+
+.btn-copy-summary--copied:hover {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
 /* ── View Toggle ── */
 .view-toggle {
   display: flex;
