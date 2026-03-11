@@ -438,6 +438,28 @@ h4 {
   background: var(--error-bg);
 }
 
+.btn--neutral {
+  background: transparent;
+  color: var(--text-tertiary);
+  border: none;
+  padding: 0 var(--spacing-sm);
+  height: 36px;
+  border-radius: var(--radius-xs);
+}
+
+.btn--neutral:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* ── Row Actions (items table) ── */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
 .btn--icon {
   width: 44px;
   padding: 0;
@@ -594,7 +616,7 @@ h4 {
 
 .items-table thead th:last-child {
   text-align: center;
-  width: 48px;
+  width: 130px;
 }
 
 .items-table tbody tr {
@@ -995,7 +1017,7 @@ h4 {
   justify-content: center;
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #fff;
+  color: #101828;
   flex-shrink: 0;
 }
 
