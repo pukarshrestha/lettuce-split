@@ -1201,6 +1201,11 @@ h4 {
     flex: 1 1 calc(50% - var(--spacing-sm));
   }
 
+  .form-group--full {
+    flex: 100%;
+  }
+
+
   .splits-grid {
     grid-template-columns: 1fr;
   }
@@ -1230,6 +1235,24 @@ h4 {
     font-size: 0.6875rem;
     max-width: 80px;
   }
+
+  .form-row {
+    flex-wrap: wrap;
+    flex-direction: column;
+  }
+
+  .form-group {
+    width: 100%;
+  }
+
+  .form-group--small {
+    flex: 100%;
+  }
+
+  .form-group.item-name {
+    flex: 100%;
+  }
+
 }
 
 /* ── Currency Select ── */
