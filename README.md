@@ -107,6 +107,4 @@ lettuce-split/
 
 ---
 
-## 📄 License
-
-MIT — feel free to use, modify, and share.
+This project was built with Antigravity. Please feel free to use, modify, and share.
