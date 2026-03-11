@@ -1201,6 +1201,11 @@ h4 {
     flex: 1 1 calc(50% - var(--spacing-sm));
   }
 
+  .form-group--small.qty,
+  .form-group--small.unit-price {
+    flex: 1;
+  }
+
   .form-group--full {
     flex: 100%;
   }
@@ -1257,7 +1262,8 @@ h4 {
     flex: 100%;
   }
 
-  .btn--primary {
+  .btn--primary,
+  .btn--secondary {
     width: 100%;
   }
 
