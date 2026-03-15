@@ -319,6 +319,7 @@
     $peopleCount.textContent = state.people.length;
     if (state.people.length === 0) {
       $peopleList.innerHTML = '<p class="text-sm text-tertiary" style="padding: var(--spacing-sm) 0;">No people added yet. Add someone above to get started.</p>';
+      $saveGroupBtn.style.display = 'none';
       return;
     }
     $peopleList.innerHTML = state.people.map(function (person) {
@@ -329,6 +330,7 @@
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
         '</button></div>';
     }).join('');
+    $saveGroupBtn.style.display = state.people.length >= 2 ? '' : 'none';
   }
 
   function renderItemsTable() {
